@@ -13,7 +13,7 @@ if [ -z "$DST_DIR" ] ; then
   DST_DIR=$(dirname TEST_NAME)
 fi
 
-GFXIP=$(/opt/rocm/bin/rocminfo | sed -n "s/^.*amdgcn-amd-amdhsa--\(\w*\).*$/\1/p")
+GFXIP=$(/opt/rocm/bin/rocminfo | grep "amdgcn-amd-amdhsa--" | head -n 1 | sed -n "s/^.*amdgcn-amd-amdhsa--\(\w*\).*$/\1/p")
 if [ -z "$GFXIP" ] ; then
   echo "GPU is not found"
   exit 1
