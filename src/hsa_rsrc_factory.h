@@ -35,6 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 
+#include <atomic>
 #include <iostream>
 #include <mutex>
 #include <map>
@@ -152,22 +153,26 @@ class HsaTimer {
 
 class HsaRsrcFactory {
  public:
+  static const size_t CMD_SLOT_SIZE_B = 0x40;
   typedef std::recursive_mutex mutex_t;
   typedef HsaTimer::timestamp_t timestamp_t;
 
   static HsaRsrcFactory* Create(bool initialize_hsa = true) {
     std::lock_guard<mutex_t> lck(mutex_);
-    if (instance_ == NULL) {
-      instance_ = new HsaRsrcFactory(initialize_hsa);
+    HsaRsrcFactory* obj = instance_.load(std::memory_order_relaxed);
+    if (obj == NULL) {
+      obj = new HsaRsrcFactory(initialize_hsa);
+      instance_.store(obj, std::memory_order_release);
     }
-    return instance_;
+    return obj;
   }
 
   static HsaRsrcFactory& Instance() {
-    if (instance_ == NULL) instance_ = Create(false);
-    hsa_status_t status = (instance_ != NULL) ? HSA_STATUS_SUCCESS : HSA_STATUS_ERROR;
+    HsaRsrcFactory* obj = instance_.load(std::memory_order_acquire);
+    if (obj == NULL) obj = Create(false);
+    hsa_status_t status = (obj != NULL) ? HSA_STATUS_SUCCESS : HSA_STATUS_ERROR;
     CHECK_STATUS("HsaRsrcFactory::Instance() failed", status);
-    return *instance_;
+    return *obj;
   }
 
   static void Destroy() {
@@ -270,7 +275,7 @@ class HsaRsrcFactory {
   static uint64_t Submit(hsa_queue_t* queue, const void* packet, size_t size_bytes);
 
   // Return AqlProfile API table
-  typedef hsa_ven_amd_aqlprofile_1_00_pfn_t aqlprofile_pfn_t;
+  typedef hsa_ven_amd_aqlprofile_pfn_t aqlprofile_pfn_t;
   const aqlprofile_pfn_t* AqlProfileApi() const { return &aqlprofile_api_; }
 
   // Return Loader API table
@@ -286,7 +291,7 @@ class HsaRsrcFactory {
   static void SetTimeoutNs(const timestamp_t& time) {
     std::lock_guard<mutex_t> lck(mutex_);
     timeout_ns_ = time;
-    if (instance_ != NULL) instance_->timeout_ = instance_->timer_->ns_to_sysclock(time);
+    if (instance_ != NULL) Instance().timeout_ = Instance().timer_->ns_to_sysclock(time);
   }
 
  private:
@@ -315,7 +320,7 @@ class HsaRsrcFactory {
   // HSA was initialized
   const bool initialize_hsa_;
 
-  static HsaRsrcFactory* instance_;
+  static std::atomic<HsaRsrcFactory*> instance_;
   static mutex_t mutex_;
 
   // Used to maintain a list of Hsa Gpu Agent Info
