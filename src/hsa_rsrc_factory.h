@@ -22,10 +22,11 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 POSSIBILITY OF SUCH DAMAGE.
 ********************************************************************/
 
-#ifndef TEST_UTIL_HSA_RSRC_FACTORY_H_
-#define TEST_UTIL_HSA_RSRC_FACTORY_H_
+#ifndef _HSA_RSRC_FACTORY_H_
+#define _HSA_RSRC_FACTORY_H_
 
 #include <hsa.h>
+#include <hsa_api_trace.h>
 #include <hsa_ext_amd.h>
 #include <hsa_ext_finalize.h>
 #include <hsa_ven_amd_aqlprofile.h>
@@ -34,6 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <atomic>
 #include <iostream>
@@ -67,6 +69,48 @@ POSSIBILITY OF SUCH DAMAGE.
 static const size_t MEM_PAGE_BYTES = 0x1000;
 static const size_t MEM_PAGE_MASK = MEM_PAGE_BYTES - 1;
 typedef decltype(hsa_agent_t::handle) hsa_agent_handle_t;
+
+struct hsa_pfn_t {
+  decltype(hsa_init)* hsa_init;
+  decltype(hsa_shut_down)* hsa_shut_down;
+  decltype(hsa_agent_get_info)* hsa_agent_get_info;
+  decltype(hsa_iterate_agents)* hsa_iterate_agents;
+
+  decltype(hsa_queue_create)* hsa_queue_create;
+  decltype(hsa_queue_destroy)* hsa_queue_destroy;
+  decltype(hsa_queue_load_write_index_relaxed)* hsa_queue_load_write_index_relaxed;
+  decltype(hsa_queue_store_write_index_relaxed)* hsa_queue_store_write_index_relaxed;
+  decltype(hsa_queue_load_read_index_relaxed)* hsa_queue_load_read_index_relaxed;
+
+  decltype(hsa_signal_create)* hsa_signal_create;
+  decltype(hsa_signal_destroy)* hsa_signal_destroy;
+  decltype(hsa_signal_load_relaxed)* hsa_signal_load_relaxed;
+  decltype(hsa_signal_store_relaxed)* hsa_signal_store_relaxed;
+  decltype(hsa_signal_wait_scacquire)* hsa_signal_wait_scacquire;
+  decltype(hsa_signal_store_screlease)* hsa_signal_store_screlease;
+
+  decltype(hsa_code_object_reader_create_from_file)* hsa_code_object_reader_create_from_file;
+  decltype(hsa_executable_create_alt)* hsa_executable_create_alt;
+  decltype(hsa_executable_load_agent_code_object)* hsa_executable_load_agent_code_object;
+  decltype(hsa_executable_freeze)* hsa_executable_freeze;
+  decltype(hsa_executable_get_symbol)* hsa_executable_get_symbol;
+  decltype(hsa_executable_symbol_get_info)* hsa_executable_symbol_get_info;
+  decltype(hsa_executable_iterate_symbols)* hsa_executable_iterate_symbols;
+
+  decltype(hsa_system_get_info)* hsa_system_get_info;
+  decltype(hsa_system_get_major_extension_table)* hsa_system_get_major_extension_table;
+
+  decltype(hsa_amd_agent_iterate_memory_pools)* hsa_amd_agent_iterate_memory_pools;
+  decltype(hsa_amd_memory_pool_get_info)* hsa_amd_memory_pool_get_info;
+  decltype(hsa_amd_memory_pool_allocate)* hsa_amd_memory_pool_allocate;
+  decltype(hsa_amd_agents_allow_access)* hsa_amd_agents_allow_access;
+  decltype(hsa_amd_memory_async_copy)* hsa_amd_memory_async_copy;
+
+  decltype(hsa_amd_signal_async_handler)* hsa_amd_signal_async_handler;
+  decltype(hsa_amd_profiling_set_profiler_enabled)* hsa_amd_profiling_set_profiler_enabled;
+  decltype(hsa_amd_profiling_get_async_copy_time)* hsa_amd_profiling_get_async_copy_time;
+  decltype(hsa_amd_profiling_get_dispatch_time)* hsa_amd_profiling_get_dispatch_time;
+};
 
 // Encapsulates information about a Hsa Agent such as its
 // handle, name, max queue size, max wavefront size, etc.
@@ -117,38 +161,108 @@ struct AgentInfo {
 
   // Number of Shader Arrays Per Shader Engines in Gpu
   uint32_t shader_arrays_per_se;
+
+  // SGPR/VGPR block sizes
+  uint32_t sgpr_block_dflt;
+  uint32_t sgpr_block_size;
+  uint32_t vgpr_block_size;
 };
 
 // HSA timer class
 // Provides current HSA timestampa and system-clock/ns conversion API
 class HsaTimer {
-  public:
+ public:
   typedef uint64_t timestamp_t;
   static const timestamp_t TIMESTAMP_MAX = UINT64_MAX;
   typedef long double freq_t;
 
-  HsaTimer() {
+  enum time_id_t {
+    TIME_ID_CLOCK_REALTIME = 0,
+    TIME_ID_CLOCK_MONOTONIC = 1,
+    TIME_ID_NUMBER
+  };
+
+  HsaTimer(const hsa_pfn_t* hsa_api) : hsa_api_(hsa_api) {
     timestamp_t sysclock_hz = 0;
-    hsa_status_t status = hsa_system_get_info(HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY, &sysclock_hz);
+    hsa_status_t status = hsa_api_->hsa_system_get_info(HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY, &sysclock_hz);
     CHECK_STATUS("hsa_system_get_info(HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY)", status);
     sysclock_factor_ = (freq_t)1000000000 / (freq_t)sysclock_hz;
   }
 
-  // Methids for system-clock/ns conversion
-  timestamp_t sysclock_to_ns(const timestamp_t& sysclock) const { return timestamp_t((freq_t)sysclock * sysclock_factor_); }
-  timestamp_t ns_to_sysclock(const timestamp_t& time) const { return timestamp_t((freq_t)time / sysclock_factor_); }
+  // Methods for system-clock/ns conversion
+  timestamp_t sysclock_to_ns(const timestamp_t& sysclock) const {
+    return timestamp_t((freq_t)sysclock * sysclock_factor_);
+  }
+  timestamp_t ns_to_sysclock(const timestamp_t& time) const {
+    return timestamp_t((freq_t)time / sysclock_factor_);
+  }
+
+  // Method for timespec/ns conversion
+  timestamp_t timespec_to_ns(const timespec& time) const {
+    return ((timestamp_t)time.tv_sec * 1000000000) + time.tv_nsec;
+  }
 
   // Return timestamp in 'ns'
   timestamp_t timestamp_ns() const {
     timestamp_t sysclock;
-    hsa_status_t status = hsa_system_get_info(HSA_SYSTEM_INFO_TIMESTAMP, &sysclock);
+    hsa_status_t status = hsa_api_->hsa_system_get_info(HSA_SYSTEM_INFO_TIMESTAMP, &sysclock);
     CHECK_STATUS("hsa_system_get_info(HSA_SYSTEM_INFO_TIMESTAMP)", status);
     return sysclock_to_ns(sysclock);
   }
 
-  private:
+  // Return time in 'ns'
+  timestamp_t clocktime_ns(clockid_t clock_id) const {
+    timespec time;
+    clock_gettime(clock_id, &time);
+    return timespec_to_ns(time);
+  }
+
+  // Return pair of correlated values of profiling timestamp and time with
+  // correlation error for a given time ID and number of iterations
+  void correlated_pair_ns(time_id_t time_id, uint32_t iters,
+                          timestamp_t* timestamp_v, timestamp_t* time_v, timestamp_t* error_v) {
+    clockid_t clock_id = 0;
+    switch (clock_id) {
+      case TIME_ID_CLOCK_REALTIME:
+        clock_id = CLOCK_REALTIME;
+        break;
+      case TIME_ID_CLOCK_MONOTONIC:
+        clock_id = CLOCK_MONOTONIC;
+        break;
+      default:
+        CHECK_STATUS("internal error: invalid time_id", HSA_STATUS_ERROR);
+    }
+
+    std::vector<timestamp_t> ts_vec(iters);
+    std::vector<timespec> tm_vec(iters);
+    const uint32_t steps = iters - 1;
+
+    for (uint32_t i = 0; i < iters; ++i) {
+      hsa_api_->hsa_system_get_info(HSA_SYSTEM_INFO_TIMESTAMP, &ts_vec[i]);
+      clock_gettime(clock_id, &tm_vec[i]);
+    }
+
+    const timestamp_t ts_base = sysclock_to_ns(ts_vec.front());
+    const timestamp_t tm_base = timespec_to_ns(tm_vec.front());
+    const timestamp_t error = (ts_vec.back() - ts_vec.front()) / (2 * steps);
+
+    timestamp_t ts_accum = 0;
+    timestamp_t tm_accum = 0;
+    for (uint32_t i = 0; i < iters; ++i) {
+      ts_accum += (ts_vec[i] - ts_base);
+      tm_accum += (timespec_to_ns(tm_vec[i]) - tm_base);
+    }
+
+    *timestamp_v = (ts_accum / iters) + ts_base + error;
+    *time_v = (tm_accum / iters) + tm_base;
+    *error_v = error;
+  }
+
+ private:
   // Timestamp frequency factor
   freq_t sysclock_factor_;
+  // HSA API table
+  const hsa_pfn_t* const hsa_api_;
 };
 
 class HsaRsrcFactory {
@@ -245,7 +359,7 @@ class HsaRsrcFactory {
   uint8_t* AllocateCmdMemory(const AgentInfo* agent_info, size_t size);
 
   // Wait signal
-  void SignalWait(const hsa_signal_t& signal) const;
+  hsa_signal_value_t SignalWait(const hsa_signal_t& signal, const hsa_signal_value_t& signal_value) const;
 
   // Wait signal with signal value restore
   void SignalWaitRestore(const hsa_signal_t& signal, const hsa_signal_value_t& signal_value) const;
@@ -274,6 +388,15 @@ class HsaRsrcFactory {
   static uint64_t Submit(hsa_queue_t* queue, const void* packet);
   static uint64_t Submit(hsa_queue_t* queue, const void* packet, size_t size_bytes);
 
+  // Enable executables loading tracking
+  static bool IsExecutableTracking() { return executable_tracking_on_; }
+  static void EnableExecutableTracking(HsaApiTable* table);
+  static const char* GetKernelName(uint64_t addr);
+
+  // Initialize HSA API table
+  void static InitHsaApiTable(HsaApiTable* table);
+  static const hsa_pfn_t* HsaApi() { return &hsa_api_; }
+
   // Return AqlProfile API table
   typedef hsa_ven_amd_aqlprofile_pfn_t aqlprofile_pfn_t;
   const aqlprofile_pfn_t* AqlProfileApi() const { return &aqlprofile_api_; }
@@ -292,6 +415,21 @@ class HsaRsrcFactory {
     std::lock_guard<mutex_t> lck(mutex_);
     timeout_ns_ = time;
     if (instance_ != NULL) Instance().timeout_ = Instance().timer_->ns_to_sysclock(time);
+  }
+
+  void CorrelateTime(HsaTimer::time_id_t time_id, uint32_t iters) {
+    timestamp_t timestamp_v = 0;
+    timestamp_t time_v = 0;
+    timestamp_t error_v = 0;
+    timer_->correlated_pair_ns(time_id, iters, &timestamp_v, &time_v, &error_v);
+    time_shift_[time_id] = time_v - timestamp_v;
+    time_error_[time_id] = error_v;
+  }
+
+  hsa_status_t GetTime(uint32_t time_id, uint64_t value, uint64_t* time) {
+    if (time_id >= HsaTimer::TIME_ID_NUMBER) return HSA_STATUS_ERROR;
+    *time = value + time_shift_[time_id];
+    return HSA_STATUS_SUCCESS;
   }
 
  private:
@@ -334,6 +472,16 @@ class HsaRsrcFactory {
   // System agents map
   std::map<hsa_agent_handle_t, const AgentInfo*> agent_map_;
 
+  // Executables loading tracking
+  typedef std::map<uint64_t, const char*> symbols_map_t;
+  static symbols_map_t* symbols_map_;
+  static bool executable_tracking_on_;
+  static hsa_status_t hsa_executable_freeze_interceptor(hsa_executable_t executable, const char *options);
+  static hsa_status_t executable_symbols_cb(hsa_executable_t exec, hsa_executable_symbol_t symbol, void *data);
+
+  // HSA runtime API table
+  static hsa_pfn_t hsa_api_;
+
   // AqlProfile API table
   aqlprofile_pfn_t aqlprofile_api_;
 
@@ -348,10 +496,14 @@ class HsaRsrcFactory {
   // HSA timer
   HsaTimer* timer_;
 
+  // Time shift array to support time conversion
+  timestamp_t time_shift_[HsaTimer::TIME_ID_NUMBER];
+  timestamp_t time_error_[HsaTimer::TIME_ID_NUMBER];
+
   // CPU/kern-arg memory pools
   hsa_amd_memory_pool_t *cpu_pool_;
   hsa_amd_memory_pool_t *kern_arg_pool_;
 };
 
 
-#endif  // TEST_UTIL_HSA_RSRC_FACTORY_H_
+#endif  // _HSA_RSRC_FACTORY_H_
