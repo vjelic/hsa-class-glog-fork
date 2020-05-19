@@ -32,6 +32,13 @@ if ( NOT DEFINED TEST_DIR )
   include ( env )
 endif ()
 
+if ( NOT DEFINED ROCM_ROOT_DIR )
+  set ( ROCM_ROOT_DIR "" )
+endif ()
+if ( NOT DEFINED GPU_TARGETS )
+  set ( GPU_TARGETS "" )
+endif ()
+
 ## Util sources
 file( GLOB UTIL_SRC "${TEST_DIR}/util/*.cpp" )
 
@@ -43,12 +50,12 @@ set ( CTRL_SRC
 
 ## Dummy kernel
 set ( DUMMY_NAME dummy_kernel )
-execute_process ( COMMAND sh -xc "${TEST_DIR}/../script/build_kernel.sh ${TEST_DIR}/${DUMMY_NAME}/${DUMMY_NAME} ${PROJECT_BINARY_DIR}" )
+execute_process ( COMMAND sh -xc "${TEST_DIR}/../script/build_kernel.sh '${TEST_DIR}/${DUMMY_NAME}/${DUMMY_NAME}' '${PROJECT_BINARY_DIR}' '${ROCM_ROOT_DIR}' '${GPU_TARGETS}'" )
 
 ## Test kernel
 set ( TEST_NAME simple_convolution )
 set ( KERN_SRC ${TEST_DIR}/${TEST_NAME}/${TEST_NAME}.cpp )
-execute_process ( COMMAND sh -xc "${TEST_DIR}/../script/build_kernel.sh ${TEST_DIR}/${TEST_NAME}/${TEST_NAME} ${PROJECT_BINARY_DIR}" )
+execute_process ( COMMAND sh -xc "${TEST_DIR}/../script/build_kernel.sh '${TEST_DIR}/${TEST_NAME}/${TEST_NAME}' '${PROJECT_BINARY_DIR}' '${ROCM_ROOT_DIR}' '${GPU_TARGETS}'" )
 
 ## Building ctrl test executable
 add_executable ( ${EXE_NAME} ${CTRL_SRC} ${UTIL_SRC} ${KERN_SRC} )
