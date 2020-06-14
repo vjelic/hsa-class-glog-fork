@@ -23,6 +23,7 @@ THE SOFTWARE.
 #ifndef TEST_CTRL_TEST_KERNEL_H_
 #define TEST_CTRL_TEST_KERNEL_H_
 
+#include <string>
 #include <string.h>
 #include <stdint.h>
 #include <map>
