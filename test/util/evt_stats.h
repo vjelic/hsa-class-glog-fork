@@ -45,7 +45,7 @@ class EvtStatsT {
 
   void dump() {
     std::lock_guard<mutex_t> lck(mutex_);
-    //printf("EvtStats %p ::dump()", this); fflush(stdout);
+    fprintf(stdout, "Dumping %s\n", path_); fflush(stdout);
 
     typedef typename std::set<std::pair<evt_id_t, evt_record_t>, cmpfun> set_t;
     set_t s_(map_.begin(), map_.end());
@@ -53,13 +53,22 @@ class EvtStatsT {
     uint64_t index = 0;
     for (auto& e : s_) {
       const evt_id_t id = e.first;
-      auto ret = labels_.insert({id, NULL});
+      const char* label = get_label(id);
       std::ostringstream oss;
-      oss << index << ',' << e.first << ',' << ret.first->second << ',' << e.second.avr << ',' << (e.second.count * e.second.avr);
+      oss << index << ',' << label << ',' << e.second.count << ',' << (uint64_t)(e.second.avr) << ',' << (uint64_t)(e.second.count * e.second.avr);
       fprintf(fdes_, "%s\n", oss.str().c_str());
     }
 
     fclose(fdes_);
+  }
+
+  const char* get_label(const uint32_t& id) {
+    auto ret = labels_.insert({id, NULL});
+    const char* label = ret.first->second;
+    return label;
+  }
+  const char* get_label(const char* id) {
+    return id;
   }
 
   void set_label(evt_id_t id, const char* label) {
@@ -67,7 +76,7 @@ class EvtStatsT {
     labels_[id] = label;
   }
 
-  EvtStatsT(FILE* f) : fdes_(f) {
+  EvtStatsT(FILE* f, const char* path) : fdes_(f), path_(path) {
     //printf("EvtStats %p ::EvtStatsT()\n", this); fflush(stdout);
     fprintf(fdes_, "Index,Name,Count,Avr,Total\n");
   }
@@ -77,6 +86,7 @@ class EvtStatsT {
   map_t map_;
   labels_t labels_;
   FILE* fdes_;
+  const char* path_;
 };
 
 typedef EvtStatsT<uint32_t, uint64_t> EvtStats;
