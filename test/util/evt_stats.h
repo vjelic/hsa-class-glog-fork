@@ -57,6 +57,7 @@ class EvtStatsT {
       std::ostringstream oss;
       oss << index << ',' << label << ',' << e.second.count << ',' << (uint64_t)(e.second.avr) << ',' << (uint64_t)(e.second.count * e.second.avr);
       fprintf(fdes_, "%s\n", oss.str().c_str());
+      index += 1;
     }
 
     fclose(fdes_);
