@@ -55,7 +55,7 @@ class EvtStatsT {
       const evt_id_t id = e.first;
       const char* label = get_label(id);
       std::ostringstream oss;
-      oss << index << ',' << label << ',' << e.second.count << ',' << (uint64_t)(e.second.avr) << ',' << (uint64_t)(e.second.count * e.second.avr);
+      oss << index << ",\"" << label << "\"," << e.second.count << "," << (uint64_t)(e.second.avr) << ',' << (uint64_t)(e.second.count * e.second.avr);
       fprintf(fdes_, "%s\n", oss.str().c_str());
       index += 1;
     }
@@ -70,6 +70,9 @@ class EvtStatsT {
   }
   const char* get_label(const char* id) {
     return id;
+  }
+  const char* get_label(const std::string& id) {
+    return id.c_str();
   }
 
   void set_label(evt_id_t id, const char* label) {
