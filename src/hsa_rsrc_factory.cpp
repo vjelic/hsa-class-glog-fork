@@ -740,8 +740,7 @@ hsa_status_t HsaRsrcFactory::hsa_executable_freeze_interceptor(hsa_executable_t 
   return hsa_api_.hsa_executable_freeze(executable, options);;
 }
 
-void HsaRsrcFactory::DumpHandles(const char* output_file_name) {
-  FILE *file = fopen(output_file_name, "w");
+void HsaRsrcFactory::DumpHandles(FILE* file) {
   auto beg = agent_map_.begin();
   auto end = agent_map_.end();
   for (auto it = beg; it != end; ++it) {
@@ -751,7 +750,7 @@ void HsaRsrcFactory::DumpHandles(const char* output_file_name) {
     if (agent_info->kern_arg_pool.handle != 0) fprintf(file, "0x%lx pool cpu kernarg\n", agent_info->kern_arg_pool.handle);
     if (agent_info->gpu_pool.handle != 0) fprintf(file, "0x%lx pool gpu\n", agent_info->gpu_pool.handle);
   }
-  fclose(file);
+  fflush(file);
 }
 
 std::atomic<HsaRsrcFactory*> HsaRsrcFactory::instance_{};

@@ -438,7 +438,7 @@ class HsaRsrcFactory {
     return HSA_STATUS_SUCCESS;
   }
 
-  void DumpHandles(const char* output_file_name);
+  void DumpHandles(FILE* output_file);
 
  private:
   // System agents iterating callback
