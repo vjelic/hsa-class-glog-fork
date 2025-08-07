@@ -1,0 +1,209 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Glog.AI",
+          "organization": "Glog.AI",
+          "fullName": "Glog, Making software more secure",
+          "version": "1.0.0",
+          "semanticVersion": "1.0.0",
+          "informationUri": "https://www.glog.ai",
+          "rules": [
+            {
+              "id": "glog-49c4256a-8e89-46e7-9c16-89319ce35f4d",
+              "help": {
+                "text": "",
+                "markdown": "## Description\n\nThe vulnerability in question is a buffer overflow vulnerability that can occur in the `memcpy` function in C++. This function is used to copy a block of memory from one location to another. If the size of the destination buffer is less than the size of the source buffer, it can lead to a buffer overflow. This can overwrite adjacent memory, leading to unpredictable program behavior, crashes, or even code execution.\n\nIn the provided code snippet, the vulnerability arises if `slot_size_b` is less than the size of `uint32_t` plus 1. This would cause `memcpy` to attempt to copy more data than can fit into `queue_slot`, leading to a buffer overflow.\n\n## Mitigation Advice\n\nTo mitigate this vulnerability, you should always ensure that the destination buffer is large enough to hold the data being copied. This can be done by checking the size of the destination buffer against the size of the source buffer before calling `memcpy`.\n\nAdditionally, consider using safer alternatives to `memcpy` such as `memcpy_s` or `strncpy` which include a length parameter to prevent buffer overflows.\n\n## Source Code Fix Recommendation\n\nHere is a fixed version of the code snippet:\n\n```cpp\nif (slot_size_b >= sizeof(uint32_t) + 1) {\n    memcpy(&queue_slot[1], &slot_data[1], slot_size_b - sizeof(uint32_t));\n} else {\n    // Handle error\n}\n```\n\nIn this version, we first check if `slot_size_b` is large enough to prevent a buffer overflow. If it is not, we handle the error appropriately.\n\n## Library Dependencies\n\nThe code example requires the following library to execute properly:\n\n```cpp\n#include <cstring>\n```\n\n## OWASP and CWE Links\n\n- [OWASP Buffer Overflow](https://owasp.org/www-community/vulnerabilities/Buffer_Overflow)\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)"
+              },
+              "properties": {
+                "tags": [
+                  "DS121708"
+                ]
+              }
+            },
+            {
+              "id": "glog-3b44521a-2962-45c4-8588-47f1ea827ffd",
+              "help": {
+                "text": "",
+                "markdown": "## Description\n\nThe `strncpy` function in C++ is considered unsafe because it can lead to buffer overflow vulnerabilities. The function copies a specified number of characters from one string to another. If the source string is longer than the specified number of characters, the function does not append a null character to the destination string. This can lead to buffer overflow if the destination string is used in a context that expects it to be null-terminated.\n\nIn the provided code snippet, `strncpy(agent_info->gfxip, agent_info->name, 4)`, the function copies the first 4 characters from `agent_info->name` to `agent_info->gfxip`. If `agent_info->name` is longer than 4 characters, `agent_info->gfxip` will not be null-terminated, which can lead to buffer overflow.\n\n## Mitigation Advice\n\nTo mitigate this vulnerability, use safer string copy functions that ensure the destination string is null-terminated. In C++, the `strlcpy` function can be used as a safer alternative to `strncpy`. \n\n## Source Code Fix Recommendation\n\nReplace the `strncpy` function with `strlcpy`:\n\n```cpp\nstrlcpy(agent_info->gfxip, agent_info->name, sizeof(agent_info->gfxip));\n```\n\nThis will copy the string and ensure it is null-terminated.\n\n## Library Dependencies\n\nThe code example requires the following library:\n\n- `cstring` or `string.h` for the `strncpy` function\n\n## References\n\n- [OWASP C++ Secure Coding Practices](https://cheatsheetseries.owasp.org/cheatsheets/C-Based_Toolchain_Hardening_Cheat_Sheet.html)\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)\n\nPlease note that the links provided are accessible to anonymous users at the time of writing this report."
+              },
+              "properties": {
+                "tags": [
+                  "DS111237"
+                ]
+              }
+            }
+          ],
+          "language": "en-US",
+          "contents": [
+            "localizedData",
+            "nonLocalizedData"
+          ],
+          "isComprehensive": false
+        }
+      },
+      "language": "en-US",
+      "results": [
+        {
+          "ruleId": "glog-49c4256a-8e89-46e7-9c16-89319ce35f4d",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Detected Vulnerability in C Function (memcpy)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/hsa_rsrc_factory.cpp"
+                },
+                "region": {
+                  "startLine": 667,
+                  "startColumn": 2,
+                  "endLine": 667,
+                  "endColumn": 70,
+                  "charOffset": 29414,
+                  "charLength": 68,
+                  "snippet": {
+                    "text": "memcpy(&queue_slot[1], &slot_data[1], slot_size_b - sizeof(uint32_t)",
+                    "rendered": {
+                      "text": "memcpy(&queue_slot[1], &slot_data[1], slot_size_b - sizeof(uint32_t)",
+                      "markdown": "`memcpy(&queue_slot[1], &slot_data[1], slot_size_b - sizeof(uint32_t)`"
+                    }
+                  },
+                  "sourceLanguage": "cpp"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "There are a number of conditions in which memcpy can introduce a vulnerability (mismatched buffer sizes, null pointers, etc.). More secure alternitives perform additional validation of the source and destination buffer"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "src/hsa_rsrc_factory.cpp"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 29414,
+                        "charLength": 68
+                      },
+                      "insertedContent": {
+                        "text": "memcpy_s(&queue_slot[1], <size of &queue_slot[1]>,  &slot_data[1],  slot_size_b - sizeof(uint32_t)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "BestPractice",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.ProblematicFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "glog-3b44521a-2962-45c4-8588-47f1ea827ffd",
+          "kind": "fail",
+          "level": "error",
+          "message": {
+            "text": "\"Prohibited strncpy Function Found\""
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/hsa_rsrc_factory.cpp"
+                },
+                "region": {
+                  "startLine": 320,
+                  "startColumn": 4,
+                  "endLine": 320,
+                  "endColumn": 51,
+                  "charOffset": 14995,
+                  "charLength": 47,
+                  "snippet": {
+                    "text": "strncpy(agent_info->gfxip, agent_info->name, 4)",
+                    "rendered": {
+                      "text": "strncpy(agent_info->gfxip, agent_info->name, 4)",
+                      "markdown": "`strncpy(agent_info->gfxip, agent_info->name, 4)`"
+                    }
+                  },
+                  "sourceLanguage": "cpp"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "strncpy is dangerous, as if the source contains 'n' or more characters, it will not null terminate the destination."
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "src/hsa_rsrc_factory.cpp"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 14995,
+                        "charLength": 47
+                      },
+                      "insertedContent": {
+                        "text": "strcpy_s(agent_info->gfxip,  4,  agent_info->name)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "description": {
+                "text": "strncpy is dangerous, as if the source contains 'n' or more characters, it will not null terminate the destination."
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "src/hsa_rsrc_factory.cpp"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "charOffset": 14995,
+                        "charLength": 47
+                      },
+                      "insertedContent": {
+                        "text": "strlcpy(agent_info->gfxip,  agent_info->name,  4)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "Important",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.BannedFunction"
+            ]
+          }
+        }
+      ],
+      "newlineSequences": [
+        "\r\n",
+        "\n"
+      ]
+    }
+  ]
+}
