@@ -15,7 +15,7 @@
               "id": "5f6fcbdb-1c3d-3e43-88d1-c0e8de664ea5",
               "help": {
                 "text": "",
-                "markdown": "This finding is classified as a genuine vulnerability because the analysis detected a possible undefined behavior risk due to overlapping memory regions in a call to a memory copy function. The destination and source expressions are derived from similar array indexing, and dataflow analysis suggests that the source and destination may overlap. This can lead to unpredictable results or program crashes, as standard memory copy functions like memcpy do not support overlapping regions. Additionally, there is no evidence of a guard or check to prevent this overlap, and the source may also be null, which further increases the risk. The classification and verdict both indicate a high-confidence issue that should be addressed.\n\n## In Context Remediation\nTo prevent undefined behavior when copying memory regions that may overlap, use `memmove` instead of `memcpy`. The `memmove` function is specifically designed to handle overlapping source and destination regions safely. Replace the original call with:\n\n```cpp\nmemmove(&queue_slot[1], &slot_data[1], slot_size_b - sizeof(uint32_t));\n```\n\nThis change ensures that the memory copy operation is safe even if the source and destination regions overlap.\n\n## References\n- [OWASP: Buffer Overflow](https://owasp.org/www-community/vulnerabilities/Buffer_Overflow)\n- [CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer](https://cwe.mitre.org/data/definitions/119.html)\n- [CWE-787: Out-of-bounds Write](https://cwe.mitre.org/data/definitions/787.html)\n\n\n___\n"
+                "markdown": "This finding is considered a genuine vulnerability because the classification indicates a risk of undefined behavior due to possible overlap between the source and destination memory regions in the memory copy operation. The analysis detected that the source and destination may overlap based on data flow, which can cause undefined behavior with functions like memcpy. Additionally, the source may be null, which could also lead to a crash or further undefined behavior. There are no explicit guards or checks to prevent these issues, and the function call is not protected by any length or capacity checks. The destination is not likely to be null, but the overlap and possible null source make this a high-confidence, actionable issue.\n\n## In Context Remediation\nTo prevent undefined behavior when the source and destination memory regions may overlap, replace the use of `memcpy` with `memmove`, which is designed to handle overlapping memory safely. This change ensures that the copy operation will not result in data corruption or crashes if the regions overlap.\n\n```cpp\nmemmove(&queue_slot[1], &slot_data[1], slot_size_b - sizeof(uint32_t));\n```\n\nIf you are certain that the regions never overlap, document this assumption clearly in the code and add assertions or checks to enforce it at runtime. However, using `memmove` is the safest and most portable solution.\n\n## References\n- [OWASP C-Based Toolchain Hardening Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/C-Based_Toolchain_Hardening_Cheat_Sheet.html)\n- [CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer](https://cwe.mitre.org/data/definitions/119.html)\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)\n- [CWE-787: Out-of-bounds Write](https://cwe.mitre.org/data/definitions/787.html)\n- [OWASP Buffer Overflow](https://owasp.org/www-community/vulnerabilities/Buffer_Overflow)\n\n___\n"
               },
               "properties": {
                 "tags": [
@@ -48,18 +48,6 @@
               }
             },
             {
-              "id": "e652de10-6597-37bd-bb6c-9cc692e8110e",
-              "help": {
-                "text": "",
-                "markdown": "This finding is classified as a genuine vulnerability because the code uses a string copy function (`strncpy`) where the source and destination buffers may overlap, as they are both fields within the same structure (`agent_info`). Overlapping memory regions with `strncpy` can result in undefined behavior, which may lead to data corruption or unpredictable program behavior. Additionally, there are no explicit checks to ensure that the source and destination pointers are non-null, increasing the risk of null pointer dereference. The presence of a NUL terminator assignment after the call does not mitigate the undefined behavior risk. The probability of this being a false positive is further reduced because the analysis detected that the source and destination are derived from the same base object, making overlap feasible.\n\n## In Context Remediation\nTo prevent undefined behavior when copying between potentially overlapping fields within the same structure, use a memory-safe copy function that supports overlapping regions, such as `memmove`. Replace the string copy with a call to `memmove`, ensuring the destination and source pointers are valid and not null before copying. For example:\n\n```cpp\nif (agent_info && agent_info->gfxip && agent_info->name) {\n    memmove(agent_info->gfxip, agent_info->name, 4);\n    agent_info->gfxip[4] = '\\0'; // Ensure null-termination if appropriate\n}\n```\n\nThis approach safely handles overlapping memory and avoids undefined behavior. Always validate pointers before use to prevent null pointer dereference.\n\n## References\n- [OWASP C-Based Toolchain Hardening Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/C-Based_Toolchain_Hardening_Cheat_Sheet.html)\n- [CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer](https://cwe.mitre.org/data/definitions/119.html)\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)\n- [CWE-787: Out-of-bounds Write](https://cwe.mitre.org/data/definitions/787.html)\n- [OWASP Buffer Overflow](https://owasp.org/www-community/vulnerabilities/Buffer_Overflow)\n\n___\n"
-              },
-              "properties": {
-                "tags": [
-                  "DS111237"
-                ]
-              }
-            },
-            {
               "id": "693c8176-698b-320b-993d-6428d8d55f4f",
               "help": {
                 "text": "",
@@ -68,6 +56,18 @@
               "properties": {
                 "tags": [
                   "DS154189"
+                ]
+              }
+            },
+            {
+              "id": "e652de10-6597-37bd-bb6c-9cc692e8110e",
+              "help": {
+                "text": "",
+                "markdown": "This finding is considered a genuine vulnerability because the classification indicates a risk of undefined behavior due to possible overlap between the source and destination memory regions in the string copy operation. The analysis detected that both the source and destination fields belong to the same structure, which increases the likelihood of memory overlap. Additionally, there are no checks in place to ensure that the source and destination pointers are not null, which could also lead to undefined behavior. The presence of a null-terminator assignment after the copy does not mitigate the risk of overlapping memory regions. The absence of explicit bounds checks or capacity-based length calculations further increases the risk. Therefore, this issue should be addressed to prevent potential memory corruption or crashes.\n\n## In Context Remediation\nTo remediate the risk of undefined behavior caused by possible overlapping memory regions in the string copy operation, first ensure that the source and destination fields do not overlap. If both fields belong to the same structure, verify that their memory regions do not intersect. Add explicit checks before performing the copy:\n\n```c\nif (agent_info != NULL && agent_info->gfxip != agent_info->name) {\n    strncpy(agent_info->gfxip, agent_info->name, 4);\n    agent_info->gfxip[3] = '\\0'; // Ensure null-termination if appropriate\n}\n```\n\nIf overlap is possible and unavoidable, consider using `memmove` instead of `strncpy`, as `memmove` is safe for overlapping regions:\n\n```c\nif (agent_info != NULL) {\n    memmove(agent_info->gfxip, agent_info->name, 4);\n    agent_info->gfxip[3] = '\\0';\n}\n```\n\nAdditionally, always check that both the source and destination pointers are not null before performing the operation to prevent null pointer dereference.\n\n## References\n- [OWASP C-Based Toolchain Hardening Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/C-Based_Toolchain_Hardening_Cheat_Sheet.html)\n- [CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer](https://cwe.mitre.org/data/definitions/119.html)\n- [CWE-120: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')](https://cwe.mitre.org/data/definitions/120.html)\n- [CWE-787: Out-of-bounds Write](https://cwe.mitre.org/data/definitions/787.html)\n- [OWASP Buffer Overflow](https://owasp.org/www-community/vulnerabilities/Buffer_Overflow)\n\n\n___\n"
+              },
+              "properties": {
+                "tags": [
+                  "DS111237"
                 ]
               }
             }
@@ -228,6 +228,46 @@
           }
         },
         {
+          "ruleId": "693c8176-698b-320b-993d-6428d8d55f4f",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Detected Prohibited C Function"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/hsa_rsrc_factory.cpp"
+                },
+                "region": {
+                  "startLine": 749,
+                  "startColumn": 42,
+                  "endLine": 749,
+                  "endColumn": 49,
+                  "charOffset": 32841,
+                  "charLength": 7,
+                  "snippet": {
+                    "text": "fprintf",
+                    "rendered": {
+                      "text": "fprintf",
+                      "markdown": "`fprintf`"
+                    }
+                  },
+                  "sourceLanguage": "cpp"
+                }
+              }
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "Moderate",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.BannedFunction"
+            ]
+          }
+        },
+        {
           "ruleId": "e652de10-6597-37bd-bb6c-9cc692e8110e",
           "kind": "fail",
           "level": "error",
@@ -309,46 +349,6 @@
           ],
           "properties": {
             "DevSkimSeverity": "Important",
-            "DevSkimConfidence": "High",
-            "tags": [
-              "API.DangerousAPI.BannedFunction"
-            ]
-          }
-        },
-        {
-          "ruleId": "693c8176-698b-320b-993d-6428d8d55f4f",
-          "kind": "fail",
-          "level": "warning",
-          "message": {
-            "text": "Detected Prohibited C Function"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/hsa_rsrc_factory.cpp"
-                },
-                "region": {
-                  "startLine": 749,
-                  "startColumn": 42,
-                  "endLine": 749,
-                  "endColumn": 49,
-                  "charOffset": 32841,
-                  "charLength": 7,
-                  "snippet": {
-                    "text": "fprintf",
-                    "rendered": {
-                      "text": "fprintf",
-                      "markdown": "`fprintf`"
-                    }
-                  },
-                  "sourceLanguage": "cpp"
-                }
-              }
-            }
-          ],
-          "properties": {
-            "DevSkimSeverity": "Moderate",
             "DevSkimConfidence": "High",
             "tags": [
               "API.DangerousAPI.BannedFunction"
