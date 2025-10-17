@@ -12,10 +12,10 @@
           "informationUri": "https://www.glog.ai",
           "rules": [
             {
-              "id": "693c8176-698b-320b-993d-6428d8d55f4f",
+              "id": "c3cb33ee-380f-367c-b2cb-8b401addbfde",
               "help": {
                 "text": "",
-                "markdown": "## Description\n\n\"Detected Prohibited C Function\" vulnerability in C++ refers to the use of insecure or unsafe C library functions that can lead to various security issues such as buffer overflows, format string vulnerabilities, integer overflows, etc. These functions are often prohibited because they do not perform bounds checking or other necessary runtime checks, making them susceptible to exploitation.\n\nIn the given code snippet, there is no specific C function being used, so it's not possible to provide a specific vulnerability sink. However, the code seems to be checking if a handle to a CPU pool in an agent info structure is not null. If this check is not done properly, it could lead to null pointer dereferencing issues.\n\n## Mitigation Advice\n\nTo mitigate such vulnerabilities, it is recommended to:\n\n1. Avoid using unsafe C library functions. Instead, use safer alternatives that perform necessary runtime checks.\n2. Always validate and sanitize input data.\n3. Implement proper error handling and check for null pointers before dereferencing them.\n4. Use modern C++ features and libraries that provide more safety guarantees.\n\n## Source Code Fix Recommendation\n\nWithout the full context of the code, it's hard to provide a specific fix. However, a general recommendation would be to always check for null pointers before dereferencing them:\n\n```cpp\nif (agent_info != nullptr && agent_info->cpu_pool.handle != 0) {\n    // Proceed with the operation\n} else {\n    // Handle the error\n}\n```\n\n## Library Dependencies\n\nThe code snippet does not provide enough information to determine the specific library dependencies.\n\n## OWASP and CWE Links\n\n- [CWE-628: Function Call with Incorrectly Specified Arguments](https://cwe.mitre.org/data/definitions/628.html)\n\nPlease note that the links provided are active and accessible to anonymous users at the time of writing this report."
+                "markdown": "## Description\n\n\"Detected Prohibited C Function\" vulnerability in C++ refers to the use of insecure or unsafe C library functions in the code. These functions are often prone to buffer overflow attacks, format string vulnerabilities, or integer overflow attacks. The specific vulnerability sink in the provided code is not clear as the code snippet provided does not contain any C function.\n\n## Mitigation Advice\n\nTo mitigate this type of vulnerability, it is recommended to avoid using unsafe C library functions. Instead, use safer alternatives provided by the C++ Standard Library. For example, instead of using `strcpy()`, use `strncpy()` or `std::string`. Also, always validate and sanitize input data to prevent injection attacks.\n\n## Source Code Fix Recommendation\n\nAs the provided code snippet does not contain any C function, a specific fix cannot be provided. However, here is a general example:\n\n```cpp\n// Vulnerable code\nchar buffer[10];\nstrcpy(buffer, userInput);\n\n// Fixed code\nchar buffer[10];\nstrncpy(buffer, userInput, sizeof(buffer) - 1);\nbuffer[sizeof(buffer) - 1] = '\\0';\n```\n\nIn the fixed code, `strncpy()` is used instead of `strcpy()`, and the size of the buffer is checked to prevent buffer overflow.\n\n## Library Dependencies\n\nThe provided code snippet does not indicate any specific library dependencies.\n\n## References\n\n- [OWASP C++](https://owasp.org/www-pdf-archive/OWASP_SCP_v2.pdf)\n- [CWE-676: Use of Potentially Dangerous Function](https://cwe.mitre.org/data/definitions/676.html)\n\nPlease note that the links provided are active and accessible to anonymous users at the time of writing this report."
               },
               "properties": {
                 "tags": [
@@ -24,10 +24,10 @@
               }
             },
             {
-              "id": "fa1b1143-7e20-3598-97ef-a099b70b61de",
+              "id": "693c8176-698b-320b-993d-6428d8d55f4f",
               "help": {
                 "text": "",
-                "markdown": "## Description\n\n\"Prohibited C Function Identified\" vulnerability in C++ refers to the use of certain C standard library functions that are known to be risky and can lead to various security vulnerabilities such as buffer overflows, format string vulnerabilities, integer overflows, etc. These functions are often prohibited in secure coding standards and guidelines due to their inherent risks.\n\nIn the given code snippet, there is no specific prohibited C function identified. However, the code is directly accessing a handle to a kernel argument pool which could potentially lead to security issues if not properly validated or if used inappropriately.\n\n## Mitigation Advice\n\nTo mitigate potential risks, it is recommended to:\n\n- Avoid direct access to kernel resources whenever possible. Use higher-level abstractions provided by the operating system or other libraries.\n- Always validate and sanitize inputs and outputs when interacting with system resources.\n- Follow secure coding standards and guidelines for your specific programming language and platform.\n\n## Source Code Fix Recommendation\n\nWithout the full context of the code, it's hard to provide a specific fix. However, a general recommendation would be to add checks to ensure that the handle is valid before using it:\n\n```cpp\nif (agent_info->kern_arg_pool.handle != 0) {\n    // Use the handle\n} else {\n    // Handle is not valid, throw an error or take other appropriate action\n}\n```\n\n## Library Dependencies\n\nThe code snippet provided does not indicate any specific library dependencies. However, any code that interacts with kernel resources would likely require specific operating system libraries or APIs.\n\n## OWASP and CWE Links\n\n- [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n- [CWE-676: Use of Potentially Dangerous Function](https://cwe.mitre.org/data/definitions/676.html)"
+                "markdown": "## Description\n\n\"Detected Prohibited C Function\" vulnerability in C++ refers to the use of insecure or unsafe C library functions that can lead to various security issues such as buffer overflows, format string vulnerabilities, integer overflows, etc. These functions are often prohibited because they do not perform bounds checking or other necessary runtime checks, making them susceptible to exploitation.\n\nIn the given code snippet, there is no specific C function being used, so it's not possible to provide a specific vulnerability sink. However, the code seems to be checking if a handle to a CPU pool in an agent info structure is not null. If this check is not done properly, it could lead to null pointer dereferencing issues.\n\n## Mitigation Advice\n\nTo mitigate such vulnerabilities, it is recommended to:\n\n1. Avoid using unsafe C library functions. Instead, use safer alternatives that perform necessary runtime checks.\n2. Always validate and sanitize input data.\n3. Implement proper error handling and check for null pointers before dereferencing them.\n4. Use modern C++ features and libraries that provide more safety guarantees.\n\n## Source Code Fix Recommendation\n\nWithout the full context of the code, it's hard to provide a specific fix. However, a general recommendation would be to always check for null pointers before dereferencing them:\n\n```cpp\nif (agent_info != nullptr && agent_info->cpu_pool.handle != 0) {\n    // Proceed with the operation\n} else {\n    // Handle the error\n}\n```\n\n## Library Dependencies\n\nThe code snippet does not provide enough information to determine the specific library dependencies.\n\n## OWASP and CWE Links\n\n- [CWE-628: Function Call with Incorrectly Specified Arguments](https://cwe.mitre.org/data/definitions/628.html)\n\nPlease note that the links provided are active and accessible to anonymous users at the time of writing this report."
               },
               "properties": {
                 "tags": [
@@ -71,11 +71,11 @@
       "language": "en-US",
       "results": [
         {
-          "ruleId": "693c8176-698b-320b-993d-6428d8d55f4f",
+          "ruleId": "fa1b1143-7e20-3598-97ef-a099b70b61de",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "Detected Prohibited C Function"
+            "text": "\"Prohibited C Function Identified\""
           },
           "locations": [
             {
@@ -84,11 +84,11 @@
                   "uri": "src/hsa_rsrc_factory.cpp"
                 },
                 "region": {
-                  "startLine": 749,
-                  "startColumn": 42,
-                  "endLine": 749,
-                  "endColumn": 49,
-                  "charOffset": 32841,
+                  "startLine": 750,
+                  "startColumn": 47,
+                  "endLine": 750,
+                  "endColumn": 54,
+                  "charOffset": 32952,
                   "charLength": 7,
                   "snippet": {
                     "text": "fprintf",
@@ -111,11 +111,11 @@
           }
         },
         {
-          "ruleId": "fa1b1143-7e20-3598-97ef-a099b70b61de",
+          "ruleId": "c3cb33ee-380f-367c-b2cb-8b401addbfde",
           "kind": "fail",
           "level": "warning",
           "message": {
-            "text": "\"Prohibited C Function Identified\""
+            "text": "Detected Prohibited C Function"
           },
           "locations": [
             {
@@ -124,11 +124,51 @@
                   "uri": "src/hsa_rsrc_factory.cpp"
                 },
                 "region": {
-                  "startLine": 750,
-                  "startColumn": 47,
-                  "endLine": 750,
-                  "endColumn": 54,
-                  "charOffset": 32952,
+                  "startLine": 751,
+                  "startColumn": 42,
+                  "endLine": 751,
+                  "endColumn": 49,
+                  "charOffset": 33071,
+                  "charLength": 7,
+                  "snippet": {
+                    "text": "fprintf",
+                    "rendered": {
+                      "text": "fprintf",
+                      "markdown": "`fprintf`"
+                    }
+                  },
+                  "sourceLanguage": "cpp"
+                }
+              }
+            }
+          ],
+          "properties": {
+            "DevSkimSeverity": "Moderate",
+            "DevSkimConfidence": "High",
+            "tags": [
+              "API.DangerousAPI.BannedFunction"
+            ]
+          }
+        },
+        {
+          "ruleId": "693c8176-698b-320b-993d-6428d8d55f4f",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Detected Prohibited C Function"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/hsa_rsrc_factory.cpp"
+                },
+                "region": {
+                  "startLine": 749,
+                  "startColumn": 42,
+                  "endLine": 749,
+                  "endColumn": 49,
+                  "charOffset": 32841,
                   "charLength": 7,
                   "snippet": {
                     "text": "fprintf",
